@@ -37,3 +37,10 @@ def parse_date(text):
             raise ValueError(f"такой даты не бывает: '{text}'")
 
     raise ValueError(f"не понимаю дату '{text}'")
+
+def normalize_kind(text):
+    """'  ДЗ ' -> 'дз'. Неизвестный тип -> 'другое'."""
+    kind = text.strip().lower()
+    if kind in KNOWN_KINDS:
+        return kind
+    return DEFAULT_KIND
