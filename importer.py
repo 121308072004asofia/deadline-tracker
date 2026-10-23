@@ -69,3 +69,23 @@ def read_rows(path):
         raise ValueError("файл пустой")
     delimiter = ";" if lines[0].count(";") > lines[0].count(",") else ","
     return list(csv.DictReader(lines, delimiter=delimiter))
+
+def normalize_row(row):
+    """Чистит названия колонок и значения от пробелов и регистра колонок."""
+    clean = {}
+    for column, value in row.items():
+        if column is None:
+            continue  # лишние ячейки без заголовка
+        clean[column.strip().lower()] = (value or "").strip()
+    return clean
+
+
+def row_to_deadline(row):
+    """Делает Deadline из одной чистой строки или выбрасывает ValueError."""
+    subject = row.get("предмет", "")
+    title = row.get("задание", "")
+    if subject == "" or title == "":
+        raise ValueError("нет предмета или названия задания")
+    due = parse_date(row.get("дата", ""))
+    kind = normalize_kind(row.get("тип", ""))
+    return Deadline(subject, title, due, kind)
