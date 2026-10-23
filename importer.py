@@ -11,6 +11,7 @@ KNOWN_KINDS = {"дз", "тест", "проект", "экзамен", "контр
 DEFAULT_KIND = "другое"
 REQUIRED_COLUMNS = {"предмет", "задание", "дата"}
 
+
 def parse_date(text):
     """Превращает строку вроде '24.10.2026 23:59' в дату.
 
@@ -38,9 +39,33 @@ def parse_date(text):
 
     raise ValueError(f"не понимаю дату '{text}'")
 
+
 def normalize_kind(text):
     """'  ДЗ ' -> 'дз'. Неизвестный тип -> 'другое'."""
     kind = text.strip().lower()
     if kind in KNOWN_KINDS:
         return kind
     return DEFAULT_KIND
+
+
+def read_text(path):
+    """Читает файл, пробуя по очереди несколько кодировок."""
+    for encoding in ENCODINGS:
+        try:
+            return path.read_text(encoding=encoding)
+        except UnicodeDecodeError:
+            continue  # не та кодировка, пробуем следующую
+    raise ValueError(f"не получилось прочитать {path.name}: неизвестная кодировка")
+
+
+def read_rows(path):
+    """Возвращает строки CSV как список словарей.
+
+    Русский Excel разделяет колонки точкой с запятой, остальные запятой,
+    поэтому разделитель угадываем по первой строке.
+    """
+    lines = read_text(path).splitlines()
+    if not lines:
+        raise ValueError("файл пустой")
+    delimiter = ";" if lines[0].count(";") > lines[0].count(",") else ","
+    return list(csv.DictReader(lines, delimiter=delimiter))
