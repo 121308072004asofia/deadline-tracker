@@ -67,3 +67,71 @@ def ask_number(prompt, maximum):
         if 1 <= number <= maximum:
             return number
         print(f"Нет задания с номером {number}.")
+
+
+def import_from_csv(store):
+    path_text = input("Путь к CSV-файлу: ").strip().strip('"')  # Windows копирует путь в кавычках
+    if path_text == "":
+        print("Путь не введён.")
+        return
+    try:
+        new_deadlines, problems = import_file(Path(path_text))
+    except FileNotFoundError:
+        print(f"Файл не найден: {path_text}")
+        return
+    except OSError as error:
+        print(f"Не получилось открыть файл: {error}")
+        return
+    except ValueError as error:
+        print(f"Не получилось загрузить: {error}")
+        return
+
+    added, moved, unchanged = store.merge(new_deadlines)
+    store.save()
+    print(f"Добавлено: {added}, перенесено: {moved}, без изменений: {unchanged}")
+    if problems:
+        print(f"Пропущено строк: {len(problems)}")
+        for problem in problems:
+            print(f"  - {problem}")
+
+
+def mark_done(store):
+    numbered = show_plan(store)
+    if not numbered:
+        return
+    number = ask_number("Номер сданного задания (Enter - отмена): ", len(numbered))
+    if number is None:
+        return
+    deadline = numbered[number - 1]
+    deadline.done = True
+    store.save()
+    print(f"Отмечено: {deadline.title}")
+
+
+def add_manually(store):
+    subject = ask_text("Предмет: ")
+    title = ask_text("Задание: ")
+    while True:
+        try:
+            due = parse_date(input("Дата (например 24.10.2026): "))
+            break
+        except ValueError as error:
+            print(f"Ошибка: {error}. Попробуйте ещё раз.")
+    kind = normalize_kind(input("Тип (дз, тест, проект, экзамен, контрольная): "))
+
+    added, moved, _ = store.merge([Deadline(subject, title, due, kind)])
+    store.save()
+    if added:
+        print("Дедлайн добавлен.")
+    elif moved:
+        print("Такое задание уже было, дата обновлена.")
+    else:
+        print("Такой дедлайн уже есть.")
+
+
+def show_report(store):
+    report = make_report(store.deadlines)
+    print()
+    print(report)
+    REPORT_FILE.write_text(report, encoding="utf-8")
+    print(f"\nОтчёт сохранён в {REPORT_FILE.name}")
