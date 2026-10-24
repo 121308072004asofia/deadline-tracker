@@ -135,3 +135,38 @@ def show_report(store):
     print(report)
     REPORT_FILE.write_text(report, encoding="utf-8")
     print(f"\nОтчёт сохранён в {REPORT_FILE.name}")
+
+
+def main():
+    store = DeadlineStore(STATE_FILE)
+    store.load()
+    if store.broken_lines:
+        print(f"Внимание: в {STATE_FILE.name} не прочитались строки {store.broken_lines}")
+    show_plan(store)
+
+    while True:
+        print(MENU)
+        choice = input("Выберите действие: ").strip()
+        match choice:
+            case "1":
+                show_plan(store)
+            case "2":
+                import_from_csv(store)
+            case "3":
+                mark_done(store)
+            case "4":
+                add_manually(store)
+            case "5":
+                show_report(store)
+            case "0":
+                print("Пока!")
+                break
+            case _:
+                print("Такой команды нет, введите цифру из меню.")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (KeyboardInterrupt, EOFError):
+        print("\nПрограмма остановлена.")
