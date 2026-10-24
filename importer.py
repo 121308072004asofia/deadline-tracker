@@ -89,3 +89,30 @@ def row_to_deadline(row):
     due = parse_date(row.get("дата", ""))
     kind = normalize_kind(row.get("тип", ""))
     return Deadline(subject, title, due, kind)
+
+
+def import_file(path):
+    """Читает CSV и возвращает (список дедлайнов, список проблем).
+
+    Плохая строка не ломает импорт: она попадает в список проблем.
+    """
+    rows = read_rows(path)
+    if not rows:
+        raise ValueError("в файле есть заголовок, но нет строк с данными")
+
+    columns = set(normalize_row(rows[0]).keys())
+    missing = REQUIRED_COLUMNS - columns
+    if missing:
+        raise ValueError(f"в файле нет колонок: {', '.join(sorted(missing))}")
+
+    deadlines = []
+    problems = []
+    for line_number, raw_row in enumerate(rows, start=2):  # строка 1 это заголовок
+        row = normalize_row(raw_row)
+        if not any(row.values()):
+            continue  # совсем пустая строка
+        try:
+            deadlines.append(row_to_deadline(row))
+        except ValueError as error:
+            problems.append(f"строка {line_number}: {error}")
+    return deadlines, problems
