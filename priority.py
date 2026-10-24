@@ -14,3 +14,17 @@ def group_of(deadline):
     if deadline.days_left <= URGENT_DAYS:
         return "Скоро"
     return "Потом"
+
+
+def sort_key(deadline):
+    """Сначала ближайшие. При одной дате выше то, что важнее по типу."""
+    return (deadline.days_left, -KIND_WEIGHTS.get(deadline.kind, 1))
+
+
+def plan_by_groups(deadlines):
+    """Возвращает словарь {группа: [несданные дедлайны по порядку]}."""
+    groups = {name: [] for name in GROUP_ORDER}
+    active = [deadline for deadline in deadlines if not deadline.done]
+    for deadline in sorted(active, key=sort_key):
+        groups[group_of(deadline)].append(deadline)
+    return groups
