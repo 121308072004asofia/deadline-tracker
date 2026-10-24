@@ -28,3 +28,27 @@ def plan_by_groups(deadlines):
     for deadline in sorted(active, key=sort_key):
         groups[group_of(deadline)].append(deadline)
     return groups
+
+
+def make_report(deadlines):
+    """Собирает текст отчёта: сколько сдано, просрочено и что висит по предметам."""
+    done = [deadline for deadline in deadlines if deadline.done]
+    overdue = [deadline for deadline in deadlines if deadline.is_overdue]
+
+    left_by_subject = {}
+    for deadline in deadlines:
+        if not deadline.done:
+            left_by_subject[deadline.subject] = left_by_subject.get(deadline.subject, 0) + 1
+
+    lines = [
+        "Отчёт по дедлайнам",
+        f"Всего заданий: {len(deadlines)}",
+        f"Сдано: {len(done)}",
+        f"Просрочено: {len(overdue)}",
+        "Осталось сдать по предметам:",
+    ]
+    for subject, count in sorted(left_by_subject.items()):
+        lines.append(f"  {subject}: {count}")
+    if not left_by_subject:
+        lines.append("  ничего, всё сдано")
+    return "\n".join(lines)
